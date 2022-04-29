@@ -7,13 +7,9 @@ class Market():
     _priceList = []
 
     @staticmethod
-    def getPrices():
+    def getPrices(proxies=None):
         b_req = False
-        url = 'https://api.binance.com/api/v3/ticker/price'
-        proxies = {
-            'http': 'http://127.0.0.1:4780',
-            'https':'http://127.0.0.1:4780'
-        }           
+        url = 'https://api.binance.com/api/v3/ticker/price'                 
         try:
             req = requests.get(url, timeout=10, proxies=proxies)
             # req = requests.get(url, timeout=10)
@@ -25,13 +21,14 @@ class Market():
         return b_req
 
     @staticmethod
-    def getPrice(symbol:str):
+    def getPrice(asset_name:str):
+        symbol = asset_name + 'USDT'
         if symbol == 'USDUSDT':
             return 1
         for dt in Market.priceList:
             if dt.get('symbol') == symbol:
                 return eval(dt.get('price'))
-        return None
+        return 0
 
 class Asset():
 
@@ -40,7 +37,7 @@ class Asset():
     def __init__(self, name:str, amount:float) -> None:
         self.name   = name
         self.amount = amount
-        self.price  = Market.getPrice(self.name + 'USDT')
+        self.price  = Market.getPrice(self.name)
 
     def getValue(self):
         return self.amount * self.price
@@ -80,19 +77,8 @@ class Accounts():
         Accounts._accountList.append(account)
 
     @staticmethod
-    def show_by_account():
-        lines = '{}{:<20} {:>8} {:>8} {:>6s}%\n'.format('', 'account', 'usd', 'rmb', '')
-        total_value = 0
-        for account in Accounts._accountList:
-            total_value += account.getValue()
-        for account in Accounts._accountList:
-            per_total = account.getValue() / total_value
-            lines = '{}{:<20} {:>8.0f} {:>8.0f} {:>6.02f}%\n'.format(lines, account.name, account.getValue(), account.getRmbValue(), per_total* 100)
-        lines = '{}{:<20} {:>8.0f} {:>8.0f} {:>6.02f}%\n'.format(lines, 'total', total_value, total_value * Asset.USD_TO_RMB, 100)
-        print(lines)
-
-    @staticmethod
-    def show_by_crypto_name():        
+    def get_total_asset_list():
+        # 汇总各个账号总资源，并按资产价值倒序
         total_value = 0
         asset_dict = {}
         for account in Accounts._accountList:
@@ -101,19 +87,42 @@ class Accounts():
                     asset_dict[asset.name] = 0
                 asset_dict[asset.name] += asset.amount
             total_value += account.getValue()
-
         asset_list = []
         for asset_name in asset_dict:
             asset_list.append(Asset(asset_name, asset_dict[asset_name]))
+        asset_list.sort(key=lambda y: y.getValue(),reverse=True) 
+        return total_value,asset_list
 
-        asset_list.sort(key=lambda y: y.getValue(),reverse=True)
-        
-        lines = '{}{:<20} {:>8} {:>8} {:>6s}%\n'.format('', 'name', 'usd', 'rmb','')
+    @staticmethod
+    def show_by_crypto_name():        
+        total_value, asset_list = Accounts.get_total_asset_list()               
+        lines = '{}{:<8s} {:>12s} {:>12s} {:>8s} {:>8s} {:>6s}%\n'.format('', 'name', 'price', 'amount', 'usd', 'rmb','')
+        usd_value = 0
         for asset in asset_list:
             per_total = asset.getValue() / total_value
-            lines = '{}{:<20} {:>8.0f} {:>8.0f} {:>6.02f}%\n'.format(lines, asset.name, asset.getValue(), asset.getRmbValue(), per_total*100)
+            if asset.name == 'USD':
+                usd_value = asset.getValue()
+            lines = '{}{:<8s} {:>12.02f} {:>12.03f} {:>8.0f} {:>8.0f} {:>6.02f}%\n'.format(lines, asset.name, asset.price, asset.amount, asset.getValue(), asset.getRmbValue(), per_total*100)
+        lines     = '{}{:<8s} {:>12.02f} {:>12.03f} {:>8.0f} {:>8.0f} {:>6.02f}%\n'.format(lines, 'total', 1, total_value, total_value, total_value * Asset.USD_TO_RMB ,100)
+        lines = '{}{:<12s}:{:>12.02f}\n'.format(lines, 'total => USD', total_value/Market.getPrice('USD'))
+        lines = '{}{:<12s}:{:>12.02f}\n'.format(lines, 'total => RMB', total_value * Asset.USD_TO_RMB )
+        lines = '{}{:<12s}:{:>12.02f}\n'.format(lines, 'total => BTC', total_value/Market.getPrice('BTC'))
+        lines = '{}{:<12s}:{:>12.02f}\n'.format(lines, 'total => ETH', total_value/Market.getPrice('ETH'))
+        rate = 1-usd_value/total_value
+        lines = '{}{:<12s}:{:>11.02f}%\n'.format(lines, 'Rate', rate*100)
+        print(lines)
 
-        lines = '{}{:<20} {:>8.0f} {:>8.0f} {:>6.02f}%\n'.format(lines, 'total', total_value, total_value * Asset.USD_TO_RMB,100)
+    
 
+    @staticmethod
+    def show_by_account():
+        lines = '{}{:<20} {:>8} {:>8} {:>6s}%\n'.format('', 'account', 'usd', 'rmb', '')
+        total_value = 0
+        for account in Accounts._accountList:
+            total_value += account.getValue()
+        for account in Accounts._accountList:
+            per_total = account.getValue() / total_value
+            lines = '{}{:<20} {:>8.0f} {:>8.0f} {:>6.02f}%\n'.format(lines, account.name,  account.getValue(), account.getRmbValue(), per_total* 100)
+        lines     = '{}{:<20} {:>8.0f} {:>8.0f} {:>6.02f}%\n'.format(lines, 'total', total_value, total_value * Asset.USD_TO_RMB, 100)
         print(lines)
 

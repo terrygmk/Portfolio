@@ -1,7 +1,7 @@
 
 from models import Market,Account,Accounts,Asset
 
-ver = 0.01
+ver = 0.02
 
 binance_asset = {
     'BTC'   : 0.952,
@@ -37,10 +37,18 @@ ledger_bitcoin_asset = {
     'BTC'   : 0.3,
 }
 
-Asset.USD_TO_RMB = 1
+# 美元对人民币汇率
+Asset.USD_TO_RMB = 6.4
+# 使用代理
+# proxies = None
+proxies = {
+        'http': 'http://127.0.0.1:4780',
+        'https':'http://127.0.0.1:4780'
+    }  
+
 if __name__ == '__main__':
     print('ver:',ver)
-    if Market.getPrices():
+    if Market.getPrices(proxies):
         Accounts.addAccount(Account('binance', binance_asset))
         Accounts.addAccount(Account('mt1_ethereum', mt1_ethereum_asset))
         Accounts.addAccount(Account('mt1_polygon', mt1_polygon_asset))
