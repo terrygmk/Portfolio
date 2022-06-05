@@ -2,43 +2,36 @@
 from models import Market,Account,Accounts,Asset
 
 ver = 0.02
-
-binance_asset = {
-    'BTC'   : 0.952,
-    'USD'   : 13774,
-    'ETH'   : 4.024,
-    'ATOM'  : 97.49,
-    'UNI'   : 162.77,
-    'LOKA'  : 154.6,
-    'BNB'   : 0.850,
-    'LUNA'  : 1.08,
-    'GMT'   : 22.10,
-}
-
-mt1_ethereum_asset = {
-    'ETH'   : 0.394,
-}
-
-mt1_polygon_asset = {
-    'ETH'       : 0.155,
-    'MATIC'     : 246,
-}
-
-trezor1_ethereum_asset = {
-    'ETH'   : 2.368,
-}
-
-trezor1_aava_aavx_asset = {
-    'BTC'   : 1,
-    'ETH'   : 1,
-}
-
-ledger_bitcoin_asset = {
-    'BTC'   : 0.3,
+assets = {
+    'binance' : {
+        'BTC'   : 0.7,
+        'USD'   : 22659+2705,
+        'ETH'   : 0,       
+        # 'BNB'   : 0.317,
+    },
+    'ftx' : {
+        'USD'   : 193,
+        'ETH'   : 0.113,       
+        # 'BNB'   : 0.317,
+    },
+    'mt1_ethereum' : {
+        'ETH'   : 0,
+    },
+    'trezor1_ethereum' : {
+        'ETH'   : 3.2,
+        'BTC'   : 0.999,
+    },
+    'ledger_bitcoin' : {
+        'BTC'   : 0.3,
+    },
+    'aridrop' : {
+        'USD'   : 7000,
+    },
 }
 
 # 美元对人民币汇率
-Asset.USD_TO_RMB = 6.4
+Asset.USD_TO_RMB = 6.79
+Asset.TOTAL_COST_RMB = 930000
 # 使用代理
 # proxies = None
 proxies = {
@@ -48,14 +41,15 @@ proxies = {
 
 if __name__ == '__main__':
     print('ver:',ver)
-    if Market.getPrices(proxies):
-        Accounts.addAccount(Account('binance', binance_asset))
-        Accounts.addAccount(Account('mt1_ethereum', mt1_ethereum_asset))
-        Accounts.addAccount(Account('mt1_polygon', mt1_polygon_asset))
-        Accounts.addAccount(Account('trezor1_ethereum', trezor1_ethereum_asset))
-        Accounts.addAccount(Account('trezor1_aava_aavx', trezor1_aava_aavx_asset))
-        Accounts.addAccount(Account('ledger_bitcoin', ledger_bitcoin_asset))
-        Accounts.show_by_crypto_name()
-        Accounts.show_by_account()        
-    else:
-        print('Fail to get prices.')
+    while True:
+        if Market.getPrices(proxies):
+            Accounts._accountList = []
+            for key in assets:
+                Accounts.addAccount(Account(key, assets[key]))       
+            Accounts.show_by_account()    
+            Accounts.show_by_crypto_name()    
+        else:
+            print('Fail to get prices.')
+        s = input('输入回车刷新,其它退出，请输入:')
+        if s != '':
+            break

@@ -21,9 +21,9 @@ class Market():
         return b_req
 
     @staticmethod
-    def getPrice(asset_name:str):
-        symbol = asset_name + 'USDT'
-        if symbol == 'USDUSDT':
+    def getPrice(asset_name:str, USD_TYPE='USDT'):
+        symbol = asset_name + USD_TYPE
+        if symbol == 'USD' + USD_TYPE:
             return 1
         for dt in Market.priceList:
             if dt.get('symbol') == symbol:
@@ -33,6 +33,7 @@ class Market():
 class Asset():
 
     USD_TO_RMB = 6.4
+    TOTAL_COST_RMB = 930000
 
     def __init__(self, name:str, amount:float) -> None:
         self.name   = name
@@ -105,7 +106,10 @@ class Accounts():
             lines = '{}{:<8s} {:>12.02f} {:>12.03f} {:>8.0f} {:>8.0f} {:>6.02f}%\n'.format(lines, asset.name, asset.price, asset.amount, asset.getValue(), asset.getRmbValue(), per_total*100)
         lines     = '{}{:<8s} {:>12.02f} {:>12.03f} {:>8.0f} {:>8.0f} {:>6.02f}%\n'.format(lines, 'total', 1, total_value, total_value, total_value * Asset.USD_TO_RMB ,100)
         lines = '{}{:<12s}:{:>12.02f}\n'.format(lines, 'total => USD', total_value/Market.getPrice('USD'))
-        lines = '{}{:<12s}:{:>12.02f}\n'.format(lines, 'total => RMB', total_value * Asset.USD_TO_RMB )
+        total_value_rmb = total_value * Asset.USD_TO_RMB
+        profit = total_value_rmb - Asset.TOTAL_COST_RMB
+        per_profit = profit / Asset.TOTAL_COST_RMB
+        lines = '{}{:<12s}:{:>12.02f}{:>12.02f}{:>8.02f}%\n'.format(lines, 'total => RMB', total_value_rmb, profit, per_profit*100)
         lines = '{}{:<12s}:{:>12.02f}\n'.format(lines, 'total => BTC', total_value/Market.getPrice('BTC'))
         lines = '{}{:<12s}:{:>12.02f}\n'.format(lines, 'total => ETH', total_value/Market.getPrice('ETH'))
         rate = 1-usd_value/total_value
